@@ -134,7 +134,7 @@ struct MockImageCtx {
   std::string id;
   parent_info parent_md;
 
-  ceph_file_layout layout;
+  file_layout_t layout;
 
   xlist<AsyncRequest<MockImageCtx>*> async_requests;
   std::list<Context*> async_requests_waiters;
