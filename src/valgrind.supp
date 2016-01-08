@@ -198,3 +198,51 @@
    fun:_dl_init
    obj:*
 }
+
+# PK11_CreateContextBySymKey
+{
+   <insert_a_suppression_name_here>
+   Helgrind:Race
+   obj:/usr/*lib*/libfreebl*3.so
+   obj:/usr/*lib*/libfreebl*3.so
+   obj:/usr/*lib*/libsoftokn3.so
+   obj:/usr/*lib*/libsoftokn3.so
+   obj:/usr/*lib*/libnss3.so
+   obj:/usr/*lib*/libnss3.so
+   fun:PK11_CreateContextBySymKey
+   fun:_ZL17nss_aes_operationmmP13PK11SymKeyStrP10SECItemStrRKN4ceph6buffer4listERS5_PNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZNK19CryptoAESKeyHandler7encryptERKN4ceph6buffer4listERS2_PNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:encrypt
+   fun:_ZN19CephxSessionHandler15_calc_signatureEP7MessagePm
+   fun:_ZN19CephxSessionHandler23check_message_signatureEP7Message
+   fun:_ZN4Pipe12read_messageEPP7MessageP18AuthSessionHandler
+}
+
+{
+   <insert_a_suppression_name_here>
+   Helgrind:Race
+   obj:/usr/*lib*/libfreebl*3.so
+   obj:/usr/*lib*/libfreebl*3.so
+   obj:/usr/*lib*/libsoftokn3.so
+   obj:/usr/*lib*/libsoftokn3.so
+   obj:/usr/*lib*/libnss3.so
+   obj:/usr/*lib*/libnss3.so
+   fun:PK11_CreateContextBySymKey
+   fun:_ZL17nss_aes_operationmmP13PK11SymKeyStrP10SECItemStrRKN4ceph6buffer4listERS5_PNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZNK19CryptoAESKeyHandler7encryptERKN4ceph6buffer4listERS2_PNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:encrypt
+   fun:_ZN19CephxSessionHandler15_calc_signatureEP7MessagePm
+   fun:_ZN19CephxSessionHandler12sign_messageEP7Message
+   fun:_ZN4Pipe6writerEv
+}
+
+# _dl_allocate_tls_init
+{
+   <insert_a_suppression_name_here>
+   Helgrind:Race
+   fun:mempcpy
+   fun:_dl_allocate_tls_init
+   fun:pthread_create@@GLIBC_2.2*
+   fun:*
+   fun:pthread_create@*
+}

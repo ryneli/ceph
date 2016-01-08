@@ -333,7 +333,6 @@ class DispatchQueue;
     void discard_out_queue();
 
     void shutdown_socket() {
-      recv_reset();
       if (sd >= 0)
         ::shutdown(sd, SHUT_RDWR);
     }

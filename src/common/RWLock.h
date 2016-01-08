@@ -22,6 +22,7 @@
 #include <include/assert.h>
 #include "lockdep.h"
 #include "include/atomic.h"
+#include "common/valgrind.h"
 
 class RWLock
 {
@@ -39,6 +40,7 @@ public:
 
   RWLock(const std::string &n, bool track_lock=true) : name(n), id(-1), nrlock(0), nwlock(0), track(track_lock) {
     pthread_rwlock_init(&L, NULL);
+    ANNOTATE_BENIGN_RACE_SIZED(&id, sizeof(id), "RWLock lockdep id");
     if (g_lockdep) id = lockdep_register(name.c_str());
   }
 
