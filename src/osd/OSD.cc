@@ -4102,7 +4102,7 @@ void TestOpsSocketHook::test_ops(OSDService *service, ObjectStore *store,
     pg_t rawpg;
     int64_t pool;
     OSDMapRef curmap = service->get_osdmap();
-    int r;
+    int r = -1;
 
     string poolstr;
 
@@ -4115,7 +4115,7 @@ void TestOpsSocketHook::test_ops(OSDService *service, ObjectStore *store,
       ss << "Invalid pool" << poolstr;
       return;
     }
-    r = -1;
+
     string objname, nspace;
     cmd_getval(service->cct, cmdmap, "objname", objname);
     std::size_t found = objname.find_first_of('/');
@@ -4221,7 +4221,7 @@ void TestOpsSocketHook::test_ops(OSDService *service, ObjectStore *store,
     cmd_getval(service->cct, cmdmap, "utime", delay, (int64_t)0);
     ostringstream oss;
     oss << delay;
-    int r = service->cct->_conf->set_val("osd_recovery_delay_start",
+    r = service->cct->_conf->set_val("osd_recovery_delay_start",
 					 oss.str().c_str());
     if (r != 0) {
       ss << "set_recovery_delay: error setting "
