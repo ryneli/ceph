@@ -253,6 +253,7 @@ public:
     scrub_stamps last_local; // when we last did a local scrub
 
     bool directory_scrubbing; /// safety check
+    bool need_scrub_local;
     bool last_scrub_dirty; /// is scrub info dirty or is it flushed to fnode?
 
     /// these are lists of children in each stage of scrubbing
@@ -263,7 +264,9 @@ public:
     set<dentry_key_t> others_scrubbing;
     set<dentry_key_t> others_scrubbed;
 
-    scrub_info_t() : directory_scrubbing(false), last_scrub_dirty(false) {}
+    scrub_info_t() :
+      directory_scrubbing(false), need_scrub_local(false),
+      last_scrub_dirty(false) {}
   };
   /**
    * Call to start this CDir on a new scrub.
@@ -425,7 +428,7 @@ protected:
   unsigned get_num_snap_null() const { return num_snap_null; }
   unsigned get_num_any() const { return num_head_items + num_head_null + num_snap_items + num_snap_null; }
   
-  bool check_rstats();
+  bool check_rstats(bool scrub=false);
 
   void inc_num_dirty() { num_dirty++; }
   void dec_num_dirty() { 
