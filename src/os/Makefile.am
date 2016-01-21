@@ -29,6 +29,7 @@ libos_a_SOURCES = \
 	os/kstore/kv.cc \
 	os/kstore/KStore.cc \
 	os/memstore/MemStore.cc \
+	os/FuseStore.cc \
 	os/ObjectStore.cc
 
 if WITH_LIBAIO
@@ -93,6 +94,7 @@ noinst_HEADERS += \
 	os/kstore/kv.h \
 	os/memstore/MemStore.h \
 	os/memstore/PageSet.h \
+	os/FuseStore.h \
 	os/ObjectMap.h \
 	os/ObjectStore.h
 
