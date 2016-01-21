@@ -2991,6 +2991,8 @@ void OSD::load_pgs()
     }
     // there can be no waiters here, so we don't call wake_pg_waiters
 
+    pg->ch = store->open_collection(pg->coll);
+
     // read pg state, log
     pg->read_state(store, bl);
 
@@ -7299,6 +7301,20 @@ void OSD::dispatch_context_transaction(PG::RecoveryCtx &ctx, PG *pg,
   }
 }
 
+struct C_OpenPGs : public Context {
+  set<PGRef> pgs;
+  ObjectStore *store;
+  C_OpenPGs(set<PGRef>& p, ObjectStore *s) : store(s) {
+    pgs.swap(p);
+  }
+  void finish(int r) {
+    for (auto p : pgs) {
+      p->ch = store->open_collection(p->coll);
+      assert(p->ch);
+    }
+  }
+};
+
 void OSD::dispatch_context(PG::RecoveryCtx &ctx, PG *pg, OSDMapRef curmap,
                            ThreadPool::TPHandle *handle)
 {
@@ -7313,11 +7329,14 @@ void OSD::dispatch_context(PG::RecoveryCtx &ctx, PG *pg, OSDMapRef curmap,
   delete ctx.info_map;
   if ((ctx.on_applied->empty() &&
        ctx.on_safe->empty() &&
-       ctx.transaction->empty()) || !pg) {
+       ctx.transaction->empty() &&
+       ctx.created_pgs.empty()) || !pg) {
     delete ctx.transaction;
     delete ctx.on_applied;
     delete ctx.on_safe;
   } else {
+    if (!ctx.created_pgs.empty())
+      ctx.on_applied->add(new C_OpenPGs(ctx.created_pgs, store));
     ctx.on_applied->add(new ObjectStore::C_DeleteTransaction(ctx.transaction));
     int tr = store->queue_transaction(
       pg->osr.get(),
