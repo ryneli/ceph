@@ -1,0 +1,19 @@
+overrides:
+  ceph:
+    fs: ext4
+    conf:
+      global:
+        osd max object name len: 460
+        osd max object namespace len: 64
+roles:
+- [mon.a, osd.0, osd.1, osd.2, client.0]
+tasks:
+- install:
+    # branch has precedence over sha1
+    branch: hammer
+    sha1: e5b6eea91cc37434f78a987d2dd1d3edd4a23f3f # dumpling
+- ceph:
+- exec:
+    client.0:
+    - wget -O test.sh https://raw.githubusercontent.com/ryneli/ceph/e530915761cab36eca6eed2c4173028177f4e62a/qa/workunits/rados/test_envlibrados_for_rocksdb.sh
+    - bash ./test.sh
