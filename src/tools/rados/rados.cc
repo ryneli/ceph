@@ -112,8 +112,8 @@ void usage(ostream& out)
 "   listomapvals <obj-name>          list the keys and vals in the object map \n"
 "   getomapval <obj-name> <key> [file] show the value for the specified key\n"
 "                                    in the object's object map\n"
-"   setomapval <obj-name> <key> <val>\n"
-"   rmomapkey <obj-name> <key>\n"
+"   setomapval [--from-files] <obj-name> <key[path]> <val[path]>\n"
+"   rmomapkey [--from-files] <obj-name> <key[path]>\n"
 "   getomapheader <obj-name> [file]\n"
 "   setomapheader <obj-name> <val>\n"
 "   tmap-to-omap <obj-name>          convert tmap keys/values to omap\n"
@@ -1567,6 +1567,34 @@ static int do_get_inconsistent_cmd(const std::vector<const char*> &nargs,
   return ret;
 }
 
+int get_string(string& outstr, const char * in, const bool from_file) {
+  int ret = 0;
+  if (from_file) {
+    int fd = open(in, O_RDONLY);
+    if (fd < 0) {
+      cerr << "error reading input file " << in << ": " << cpp_strerror(errno) << std::endl;
+      return -errno;
+    }
+    int default_read_size = 1 << 12; // TODO: How to choose read_size
+    int count = default_read_size;
+    while (count != 0) {
+      bufferlist bl;
+      count = bl.read_fd(fd, default_read_size);
+      if (count < 0) {
+        ret = -errno;
+        cerr << "error reading input file " << in << ": " << cpp_strerror(ret) << std::endl;
+        goto out;
+      }
+      outstr += string(bl.c_str(), bl.length());
+    }
+    ret = 0;
+out:
+    VOID_TEMP_FAILURE_RETRY(close(fd));
+  } else {
+    outstr = string(in);
+  }
+  return ret;
+}
 /**********************************************
 
 **********************************************/
@@ -1612,6 +1640,7 @@ static int rados_tool_common(const std::map < std::string, std::string > &opts,
   Formatter *formatter = NULL;
   bool pretty_format = false;
   const char *output = NULL;
+  bool keyval_from_files = false;
 
   Rados rados;
   IoCtx io_ctx;
@@ -1799,7 +1828,10 @@ static int rados_tool_common(const std::map < std::string, std::string > &opts,
   if (i != opts.end()) {
     with_clones = true;
   }
-
+  i = opts.find("from-files");
+  if (i != opts.end()) {
+        keyval_from_files = true;
+  }
   // open rados
   ret = rados.init_with_context(g_ceph_context);
   if (ret) {
@@ -2356,12 +2388,20 @@ static int rados_tool_common(const std::map < std::string, std::string > &opts,
     if (!pool_name || nargs.size() < 3 || nargs.size() > 4)
       usage_exit();
 
-    string oid(nargs[1]);
-    string key(nargs[2]);
+    string oid(nargs[1]), key;
+    ret = get_string(key, nargs[2], keyval_from_files);
+    if (ret < 0) {
+        goto out;
+    }
 
     bufferlist bl;
     if (nargs.size() == 4) {
-      string val(nargs[3]);
+      string val;
+      ret = get_string(val, nargs[3], keyval_from_files);
+      if (ret < 0) {
+        goto out;
+      }
+
       bl.append(val);
     } else {
       do {
@@ -2426,9 +2466,12 @@ static int rados_tool_common(const std::map < std::string, std::string > &opts,
   } else if (strcmp(nargs[0], "rmomapkey") == 0) {
     if (!pool_name || nargs.size() < 3)
       usage_exit();
+    string oid(nargs[1]), key;
+    ret = get_string(key, nargs[2], keyval_from_files);
+    if (ret < 0) {
+        goto out;
+    }
 
-    string oid(nargs[1]);
-    string key(nargs[2]);
     set<string> keys;
     keys.insert(key);
 
@@ -3607,6 +3650,8 @@ int main(int argc, const char **argv)
       opts["write-dest-xattr"] = "true";
     } else if (ceph_argparse_flag(args, i, "--with-clones", (char*)NULL)) {
       opts["with-clones"] = "true";
+    } else if (ceph_argparse_flag(args, i, "--from-files", (char*)NULL)) {
+      opts["from-files"] = "true";
     } else {
       if (val[0] == '-')
         usage_exit();

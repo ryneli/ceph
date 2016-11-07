@@ -528,12 +528,46 @@ function test_append()
   rm -rf ./rados_append_4k ./rados_append_4k_out ./rados_append_10m ./rados_append_10m_out
 }
 
+function test_read_keyval_from_file()
+{
+  p=test_read_keyval_from_file_pool
+  o=test_obj
+  # init pool
+  "$RADOS_TOOL" mkpool "$p"
+  "$RADOS_TOOL" -p "$p" create "$o"
+  # test setomapval
+  run_expect_succ "$RADOS_TOOL" -p "$p" setomapval "$o" key1 val1
+  run_expect_fail "$RADOS_TOOL" -p "$p" --from-files setomapval "$o" keyfile2 valfile2
+  echo "key2" > keyfile2
+  run_expect_fail "$RADOS_TOOL" -p "$p" --from-files setomapval "$o" keyfile2 valfile2
+  echo "val2" > valfile2
+  run_expect_succ "$RADOS_TOOL" -p "$p" --from-files setomapval "$o" keyfile2 valfile2
+
+  rm keyfile2
+  rm valfile2
+
+  # test rmomapkey
+  run_expect_succ "$RADOS_TOOL" -p "$p" rmomapkey "$o" key3
+  run_expect_succ "$RADOS_TOOL" -p "$p" rmomapkey "$o" key2
+  run_expect_fail "$RADOS_TOOL" -p "$p" --from-files rmomapkey "$o" keyfile3
+  echo "key3" > keyfile3
+  run_expect_succ "$RADOS_TOOL" -p "$p" --from-files rmomapkey "$o" keyfile3
+  rm keyfile3
+  echo "key1" > keyfile1
+  run_expect_succ "$RADOS_TOOL" -p "$p" --from-files rmomapkey "$o" keyfile1
+  rm keyfile1
+
+  # rmpool
+  "$RADOS_TOOL" rmpool "$p" "$p" --yes-i-really-really-mean-it
+}
+
 test_xattr
 test_omap
 test_rmobj
 test_ls
 test_cleanup
 test_append
+test_read_keyval_from_file
 
 echo "SUCCESS!"
 exit 0
